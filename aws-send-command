@@ -3,11 +3,9 @@
 # Usage:
 # $ ./aws-send-command <instance id> <commands> [document name]
 # Example:
-# $ ./aws-send-command "${instance_id?}" '"#!/usr/bin/env sh","uname"' ; echo $?
+# $ ./aws-send-command "${instance_id?}" '"#!/usr/bin/env sh","uname"'
 # Linux
-# 0
-# $ ./aws-send-command "${instance_id?}" '"System"' 'AWS-RunPowerShellScript'
-# Windows
+# $
 # See: https://github.com/antonycc/aws-send-command
 invocation_fields='Status,ResponseCode,StandardOutputContent,StandardErrorContent'
 instance_id="${1?}"
