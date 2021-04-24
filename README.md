@@ -10,7 +10,13 @@ server or virtual machine (VM) in your hybrid environment that has been configur
 `aws-send-command` wraps serveral AWS Systems Manager commands to provide sychronous execution of commands and
 retrieval of `stdout`, `stderr` and (for Linux) the exit status.
 
+
 ## Usage
+The execution of `aws-send-command`  requires:
+- The [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide) to be installed.
+- AWS credentials to be configured in the shell environment.
+The first example invokes AWS commands to locate and instance by tag, thens checks the connection status using a Systems Manager command.
+
 
 Usage:
 ```sh
