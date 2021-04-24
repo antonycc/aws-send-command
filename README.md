@@ -15,6 +15,6 @@ aws ssm get-connection-status \
    --target "${instance_id?}" \
    --query "Status" --output text
 connected
-./aws-send-command "${instance_id?}" '"#!/usr/bin/env bash","uname"'
+./aws-send-command "${instance_id?}" '"#!/usr/bin/env sh","uname"'
 Linux
 ```
