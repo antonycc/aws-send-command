@@ -1,28 +1,43 @@
 #!/usr/bin/env sh
 # Purpose: Send commands synchronously using this shell wrapper around the AWS CLI's ssm send-command.
 # Usage:
-# $ ./aws-send-command <instance-id> <commands>
+# $ ./aws-send-command <instance id> <commands> [document name]
 # Example:
-# $ instance_id=$(aws ec2 describe-instances \
-# $       --filters 'Name=tag:Name,Values=livea' 'Name=instance-state-name,Values=running' \
-# $       --query 'Reservations[0].Instances[0].InstanceId' --output text)
-# $ ./aws-send-command "${instance_id?}" '"#!/usr/bin/env bash","uname"'
+# $ ./aws-send-command "${instance_id?}" '"#!/usr/bin/env sh","uname"' ; echo $?
 # Linux
+# 0
+# $ ./aws-send-command "${instance_id?}" '"System"' 'AWS-RunPowerShellScript'
+# Windows
 # See: https://github.com/antonycc/aws-send-command
+invocation_fields='Status,ResponseCode,StandardOutputContent,StandardErrorContent'
 instance_id="${1?}"
 commands="${2?}"
+document_name="${3-AWS-RunShellScript}"
 command_id=$(aws ssm send-command \
-    --document-name 'AWS-RunShellScript' \
+    --document-name "${document_name?}" \
     --targets '[{"Key":"InstanceIds","Values":["'"${instance_id?}"'"]}]' \
     --parameters '{"commands":['"${commands?}"']}' \
     --query 'Command.CommandId' --output text) \
-    ;
-aws ssm wait command-executed \
-    --command-id "${command_id?}" \
-    --instance-id "${instance_id?}" \
-    ;
-aws ssm list-command-invocations \
-    --command-id "${command_id?}" \
-    --details \
-    --query 'CommandInvocations[*].CommandPlugins[*].Output' --output text \
-    ;
+	&& sleep 0.5 \
+	&& command_invocation=$(aws ssm get-command-invocation \
+		--command-id "${command_id?}" \
+		--instance-id "${instance_id?}" \
+		--query "[${invocation_fields?}]" --output text \
+		| awk '{$1=$1;print}') \
+	&& command_status=$(echo "${command_invocation?}" | head -1 | awk '{print $1;}') \
+	&& if [ "${command_status}" == "InProgress" ] ;
+	then
+		aws ssm wait command-executed \
+	    	--command-id "${command_id?}" \
+	    	--instance-id "${instance_id?}" \
+	    	;
+		command_invocation=$(aws ssm get-command-invocation \
+			--command-id "${command_id?}" \
+			--instance-id "${instance_id?}" \
+			--query "[${invocation_fields?}]" --output text \
+			| awk '{$1=$1;print}') \
+			;
+	fi \
+	; echo "${command_invocation}" | awk '{$1=$2="";print $0}' | awk '{$1=$1;print}' \
+	; exit $(echo "${command_invocation}" | head -1 | awk '{print $2;}') \
+	;
