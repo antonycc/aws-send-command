@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+# Purpose: Send commands synchronously using this shell wrapper around the AWS CLI's ssm send-command.
+# Usage:
+# $ ./aws-send-command <instance-id> <commands>
+# Example:
+# $ instance_id=$(aws ec2 describe-instances \
+# $       --filters 'Name=tag:Name,Values=livea' 'Name=instance-state-name,Values=running' \
+# $       --query 'Reservations[0].Instances[0].InstanceId' --output text)
+# $ ./aws-send-command "${instance_id?}" '"#!/usr/bin/env bash","uname"'
+# Linux
+# See: https://github.com/antonycc/aws-send-command
+instance_id="${1?}"
+commands="${2?}"
+command_id=$(aws ssm send-command \
+    --document-name 'AWS-RunShellScript' \
+    --targets '[{"Key":"InstanceIds","Values":["'"${instance_id?}"'"]}]' \
+    --parameters '{"commands":['"${commands?}"']}' \
+    --query 'Command.CommandId' --output text) \
+    ;
+aws ssm wait command-executed \
+    --command-id "${command_id?}" \
+    --instance-id "${instance_id?}" \
+    ;
+aws ssm list-command-invocations \
+    --command-id "${command_id?}" \
+    --details \
+    --query 'CommandInvocations[*].CommandPlugins[*].Output' --output text \
+    ;
