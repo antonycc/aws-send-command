@@ -16,26 +16,26 @@ command_id=$(aws ssm send-command \
     --targets '[{"Key":"InstanceIds","Values":["'"${instance_id?}"'"]}]' \
     --parameters '{"commands":['"${commands?}"']}' \
     --query 'Command.CommandId' --output text) \
-	&& sleep 0.5 \
-	&& command_invocation=$(aws ssm get-command-invocation \
-		--command-id "${command_id?}" \
-		--instance-id "${instance_id?}" \
-		--query "[${invocation_fields?}]" --output text \
-		| awk '{$1=$1;print}') \
-	&& command_status=$(echo "${command_invocation?}" | head -1 | awk '{print $1;}') \
-	&& if [ "${command_status}" == "InProgress" ] ;
-	then
-		aws ssm wait command-executed \
-	    	--command-id "${command_id?}" \
-	    	--instance-id "${instance_id?}" \
-	    	;
-		command_invocation=$(aws ssm get-command-invocation \
-			--command-id "${command_id?}" \
-			--instance-id "${instance_id?}" \
-			--query "[${invocation_fields?}]" --output text \
-			| awk '{$1=$1;print}') \
-			;
-	fi \
-	; echo "${command_invocation}" | awk '{$1=$2="";print $0}' | awk '{$1=$1;print}' \
-	; exit $(echo "${command_invocation}" | head -1 | awk '{print $2;}') \
-	;
+    && sleep 0.5 \
+    && command_invocation=$(aws ssm get-command-invocation \
+        --command-id "${command_id?}" \
+        --instance-id "${instance_id?}" \
+        --query "[${invocation_fields?}]" --output text \
+        | awk '{$1=$1;print}') \
+    && command_status=$(echo "${command_invocation?}" | head -1 | awk '{print $1;}') \
+    && if [ "${command_status}" == "InProgress" ] ;
+    then
+        aws ssm wait command-executed \
+            --command-id "${command_id?}" \
+            --instance-id "${instance_id?}" \
+            ;
+        command_invocation=$(aws ssm get-command-invocation \
+            --command-id "${command_id?}" \
+            --instance-id "${instance_id?}" \
+            --query "[${invocation_fields?}]" --output text \
+            | awk '{$1=$1;print}') \
+            ;
+    fi \
+    ; echo "${command_invocation}" | awk '{$1=$2="";print $0}' | awk '{$1=$1;print}' \
+    ; exit $(echo "${command_invocation}" | head -1 | awk '{print $2;}') \
+    ;
