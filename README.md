@@ -11,6 +11,10 @@ Example:
 instance_id=$(aws ec2 describe-instances \
    --filters 'Name=tag:Name,Values=my-instance-tag' 'Name=instance-state-name,Values=running' \
    --query 'Reservations[0].Instances[0].InstanceId' --output text)
+aws ssm get-connection-status \
+   --target "${instance_id?}" \
+   --query "Status" --output text
+connected
 ./aws-send-command "${instance_id?}" '"#!/usr/bin/env bash","uname"'
 Linux
 ```
