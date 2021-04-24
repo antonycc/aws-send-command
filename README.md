@@ -1,5 +1,5 @@
 # aws-send-command
-Send commands synchronously using this shell wrapper around the AWS CLI's (https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ssm/send-command.html)[ssm send-command].
+Send commands synchronously using this shell wrapper around the AWS CLI's [ssm send-command](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ssm/send-command.html).
 
 
 AWS Systems Manager lets you execute shell commands on your Linux or Windows managed instances.
@@ -14,7 +14,7 @@ retrieval of `stdout`, `stderr` and (for Linux) the exit status.
 
 Usage:
 ```sh
-$ ./aws-send-command <instance id> <commands> [document name]
+$ ./aws-send-command <instance id> <commands> [document name (default: AWS-RunShellScript)]
 ```
 
 ## Examples
@@ -49,8 +49,16 @@ $ echo $?
 $ 
 ```
 
-Example - Remote System to Windows:
+Example - Remote OS information to Windows:
 ```sh
+$ my_instance_tag='windows'
+$ instance_id=$(aws ec2 describe-instances \
+   --filters "Name=tag:Name,Values=${my_instance_tag?}" 'Name=instance-state-name,Values=running' \
+   --query 'Reservations[0].Instances[0].InstanceId' --output text)
+$ aws ssm get-connection-status \
+   --target "${instance_id?}" \
+   --query "Status" --output text
+connected
 $ ./aws-send-command "${instance_id?}" '"Get-CimInstance Win32_OperatingSystem | Select-Object Caption"' \
 	'AWS-RunPowerShellScript'
 
